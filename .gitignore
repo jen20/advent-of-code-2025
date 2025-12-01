@@ -1,0 +1,8 @@
+.direnv/
+target/
+.idea/
+
+# Advent of Code asks not to share these
+sample-input
+input
+puzzle.md
