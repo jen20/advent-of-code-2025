@@ -1,4 +1,5 @@
 use itertools::Itertools;
+use good_lp::{constraint, variable, variables, Expression, Solution, SolverModel, highs};
 use regex::Regex;
 
 const INPUT: &'static str = include_str!("../../input");
@@ -14,7 +15,7 @@ enum Status {
 struct Machine {
     required: Vec<Status>,
     switches: Vec<Vec<usize>>,
-    // joltage: Vec<usize>,
+    joltage: Vec<usize>,
 }
 
 fn main() {
@@ -23,7 +24,7 @@ fn main() {
     let machines = INPUT
         .lines()
         .map(|l| {
-            let (_, [required, switches, _joltage]) = machine_re.captures(l).unwrap().extract();
+            let (_, [required, switches, joltage]) = machine_re.captures(l).unwrap().extract();
 
             let required = required
                 .chars()
@@ -44,20 +45,25 @@ fn main() {
                 })
                 .collect::<Vec<_>>();
 
-            // let joltage = joltage
-            //     .split(",")
-            //     .map(|n| n.parse::<usize>().unwrap())
-            //     .collect::<Vec<_>>();
+            let joltage = joltage
+                .split(",")
+                .map(|n| n.parse::<usize>().unwrap())
+                .collect::<Vec<_>>();
 
             Machine {
                 required,
                 switches,
-                // joltage,
+                joltage,
             }
         })
         .collect::<Vec<_>>();
 
-    let part1 = machines
+    println!("Part 1: {}", part1(&machines));
+    println!("Part 2: {}", part2(&machines));
+}
+
+fn part1(machines: &Vec<Machine>) -> u64 {
+    machines
         .iter()
         .map(|machine| {
             (1..=machine.switches.len())
@@ -84,7 +90,41 @@ fn main() {
                 })
                 .unwrap()
         })
-        .sum::<u64>();
+        .sum::<u64>()
+}
 
-    println!("Part 1: {}", part1);
+fn part2(machines: &Vec<Machine>) -> i32 {
+    machines
+        .iter()
+        .map(|m| {
+            let num_switches = m.switches.len();
+            let num_counters = m.joltage.len();
+
+            variables! {
+                vars:
+            }
+
+            let switch_vars: Vec<_> = (0..num_switches)
+                .map(|_| vars.add(variable().integer().min(0)))
+                .collect();
+
+            let objective: Expression = switch_vars.iter().sum();
+
+            let mut problem = vars.minimise(&objective).using(highs);
+
+            for i in 0..num_counters {
+                let lhs: Expression = m.switches
+                    .iter()
+                    .enumerate()
+                    .filter(|(_, switch)| switch.contains(&i))
+                    .map(|(j, _)| switch_vars[j])
+                    .sum();
+
+                problem = problem.with(constraint!(lhs == m.joltage[i] as i32));
+            }
+
+            let solution = problem.solve().expect("solves");
+            switch_vars.iter().map(|&v| solution.value(v).round() as i32).sum::<i32>()
+        })
+        .sum()
 }

@@ -5,4 +5,5 @@ edition = "2024"
 
 [dependencies]
 itertools = "0.14.0"
+good_lp = { version = "1.10", features = ["highs"] }
 regex = "1.12.2"

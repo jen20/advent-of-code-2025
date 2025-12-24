@@ -31,6 +31,8 @@
         devShells.default = pkgs.mkShell {
           buildInputs = [
             rust
+            pkgs.cbc
+            pkgs.cmake
           ];
 
           shellHook = '''';
